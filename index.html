@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Scene with OBJ Loader</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="lienzo"></canvas>
+    <script type="module">
+        import jv3d from 'https://jocarsa.com/go/jv3d/jv3d.js';
+        import { V3d } from './primitives.js';
+
+        // Initialize canvas
+        jv3d.initCanvas();
+
+        // Create scene and camera
+        const scene = new jv3d.Scene();
+        const camera = new jv3d.Camera(new V3d(0, 0, -2000), new V3d(0, 0, 0));
+        scene.setCamera(camera);
+
+        // Set background color
+        scene.setBackgroundColor('rgba(100, 200, 250, 1)');
+
+        // Add lights
+        const omniLight = new jv3d.OmniLight(new V3d(200, 200, 200), [1, 1, 1]);
+        scene.addLight(omniLight);
+
+        const directionalLight = new jv3d.DirectionalLight(new V3d(-1, -1, -1), [0.5, 0.5, 0.5]);
+        scene.addLight(directionalLight);
+		
+		const ambientLight = new jv3d.AmbientLight([0.2, 0.2, 0.2]); // Example ambient light with gray color
+		scene.addAmbientLight(ambientLight);
+
+        // Create and add objects
+        jv3d.addRandomObjects(scene);
+		//scene.recalculateNormals();
+
+        // Load OBJ file and add to scene
+        fetch('./suzanne.obj')
+            .then(response => response.text())
+            .then(data => {
+                const objColor = jv3d.getRandomColor();
+                const objLoader = new jv3d.ObjLoader();
+                const { vertices, faces } = objLoader.load(data, objColor);
+                const obj = jv3d.ObjLoader.toObject(vertices, faces, objColor);
+                scene.addObject(obj);
+
+                // Render the scene after OBJ is loaded
+                jv3d.renderScene(scene);
+            });
+
+        const state = {
+            ratonPulsado: false,
+            mx: 0,
+            my: 0,
+            scene: scene,
+            contexto: jv3d.context,
+            centrox: jv3d.centerX,
+            centroy: jv3d.centerY,
+            anchura: jv3d.width,
+            altura: jv3d.height
+        };
+
+        // Set up event listeners for interaction
+        const lienzo = document.getElementById('lienzo');
+        lienzo.addEventListener('mousedown', event => jv3d.empiezaMovimiento(event, state));
+        document.addEventListener('mousemove', event => jv3d.mover(event, state));
+        document.addEventListener('mouseup', () => jv3d.paraMovimiento(state));
+        window.addEventListener('keydown', (event) => {
+    jv3d.handleKeyDown(event, state);
+});
+    </script>
+</body>
+</html>
